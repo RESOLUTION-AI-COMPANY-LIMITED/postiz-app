@@ -13,6 +13,7 @@ import {
   OpenAIAdapter,
   copilotRuntimeNodeHttpEndpoint,
 } from '@copilotkit/runtime';
+import OpenAI from 'openai';
 import { GetOrgFromRequest } from '@gitroom/nestjs-libraries/user/org.from.request';
 import { Organization } from '@prisma/client';
 import { SubscriptionService } from '@gitroom/nestjs-libraries/database/prisma/subscriptions/subscription.service';
@@ -28,6 +29,17 @@ export type ChannelsContext = {
   organization: string;
   ui: string;
 };
+
+// OpenAI client for the CopilotKit adapters. OPENAI_BASE_URL routes it through
+// an OpenAI-compatible gateway (9Router) instead of api.openai.com; unset =
+// default OpenAI. Without this the adapter builds its own client that ignores
+// OPENAI_BASE_URL, so the agent silently fails against a gateway-only key.
+const copilotOpenAi = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
+  ...(process.env.OPENAI_BASE_URL
+    ? { baseURL: process.env.OPENAI_BASE_URL }
+    : {}),
+});
 
 // the copilot runtime writes its own CORS headers on the response, keep them aligned with main.ts
 const copilotCors = () => ({
@@ -60,6 +72,7 @@ export class CopilotController {
       cors: copilotCors(),
       runtime: new CopilotRuntime(),
       serviceAdapter: new OpenAIAdapter({
+        openai: copilotOpenAi,
         model: 'gpt-4.1',
       }),
     });
@@ -106,6 +119,7 @@ export class CopilotController {
       cors: copilotCors(),
       runtime,
       serviceAdapter: new OpenAIAdapter({
+        openai: copilotOpenAi,
         model: 'gpt-4.1',
       }),
     });
