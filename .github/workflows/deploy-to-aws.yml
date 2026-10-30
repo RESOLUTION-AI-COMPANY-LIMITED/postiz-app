@@ -1,0 +1,36 @@
+name: deploy-to-aws
+
+# When the app changes (push to main, or a version tag), tell the infra repo's
+# deploy-postiz workflow to build this commit and roll the ECS services.
+# Needs repo secret POSTIZ_AWS_DISPATCH_TOKEN: a fine-grained PAT with
+# "Contents: read & write" on RESOLUTION-AI-COMPANY-LIMITED/postiz-aws.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: commit/branch/tag of this app to deploy
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: dispatch to infra deploy-postiz
+        env:
+          TOKEN: ${{ secrets.POSTIZ_AWS_DISPATCH_TOKEN }}
+          REF: ${{ github.event.inputs.ref || github.sha }}
+        run: |
+          curl -fsSL -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/RESOLUTION-AI-COMPANY-LIMITED/postiz-aws/dispatches \
+            -d "{\"event_type\":\"deploy-postiz\",\"client_payload\":{\"ref\":\"$REF\"}}"
+          echo "dispatched deploy-postiz for ref $REF"
