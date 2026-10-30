@@ -35,15 +35,25 @@ interface WorkflowChannelsState {
   };
 }
 
+// OPENAI_BASE_URL routes these LangChain clients through an OpenAI-compatible
+// gateway (e.g. 9Router). Unset = default OpenAI.
+const openAiConfiguration = process.env.OPENAI_BASE_URL
+  ? { baseURL: process.env.OPENAI_BASE_URL }
+  : undefined;
+
 const model = new ChatOpenAI({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'gpt-4.1',
   temperature: 0.7,
+  ...(openAiConfiguration ? { configuration: openAiConfiguration } : {}),
 });
 
 const dalle = new DallEAPIWrapper({
   apiKey: process.env.OPENAI_API_KEY || 'sk-proj-',
   model: 'chatgpt-image-latest',
+  ...(process.env.OPENAI_BASE_URL
+    ? { baseUrl: process.env.OPENAI_BASE_URL }
+    : {}),
 });
 
 const generateContent = z.object({

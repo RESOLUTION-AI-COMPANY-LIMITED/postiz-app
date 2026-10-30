@@ -1,7 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Agent } from '@mastra/core/agent';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { Memory } from '@mastra/memory';
+
+// OPENAI_BASE_URL routes the Mastra agent through an OpenAI-compatible gateway
+// (e.g. 9Router). Unset = default OpenAI (api.openai.com).
+const openai = createOpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  ...(process.env.OPENAI_BASE_URL
+    ? { baseURL: process.env.OPENAI_BASE_URL }
+    : {}),
+});
 import { pStore } from '@gitroom/nestjs-libraries/chat/mastra.store';
 import { array, object, string } from 'zod';
 import { ModuleRef } from '@nestjs/core';
